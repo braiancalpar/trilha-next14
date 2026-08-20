@@ -27,7 +27,7 @@ As migrations em `prisma/migrations` precisam estar versionadas. Este projeto j�
 2. Em **Root Directory**, selecione exatamente:
 
    ```text
-   construa suas aplicações com Postgres e Prisma/next-14-ssr-codeconnect-parte-2
+   postgres-prisma/next-14-ssr-codeconnect-parte-2
    ```
 
 3. Mantenha o preset **Next.js** e o comando de build padrão (`npm run build`). Não sobrescreva o comando para incluir migrations ou seed.
