@@ -39,19 +39,26 @@ No projeto Vercel, abra **Storage** (ou **Marketplace**) e instale a integraçã
 
 Essa integração injeta `DATABASE_URL` nos ambientes da Vercel. Não copie a URL para o Git nem a exponha com o prefixo `NEXT_PUBLIC_`.
 
-## 4. Aplicar schema e dados iniciais no build da Vercel
+## 4. Aplicar schema e dados iniciais localmente
 
-As variáveis criadas pela integração são marcadas como **Sensitive**. A Vercel as disponibiliza durante o build e a execução da aplicação, mas não permite exportá-las para um arquivo local. Portanto, não use `vercel env pull` para executar migrations deste banco localmente: o arquivo conterá o placeholder `<encrypted>`.
+As variáveis criadas pela integração são marcadas como **Sensitive**. Por isso, `vercel env pull` salva o placeholder `<encrypted>` e não pode ser usado para migrations locais.
 
-No projeto Vercel, abra **Settings > Build and Deployment**. Em **Build Command**, ative o override e informe:
+Na tela do banco em **Storage**, clique em **Show secret** e depois em **Copy Snippet**. Não compartilhe essas URLs. Faça uma cópia do seu `.env` local (do Docker), substitua temporariamente o conteúdo dele pelo snippet copiado e execute:
 
-```text
-npm run db:deploy && npm run db:seed && npm run build
+```powershell
+Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
+npm.cmd run db:deploy
+npx.cmd prisma generate
+npm.cmd run db:seed
 ```
 
-Em seguida, faça um redeploy. A Vercel executará a migration e o seed com a credencial real, sem revelá-la. O seed deste projeto usa `upsert`, então pode ser reexecutado sem duplicar os posts.
+O primeiro comando remove uma variável temporária da sessão do PowerShell, caso ela tenha sido configurada antes. Sem ele, essa variável tem prioridade sobre o `.env` e pode apontar para o placeholder `<encrypted>`. Ao terminar, restaure o `.env` local do Docker. `db:deploy` usa `prisma migrate deploy`, o comando não interativo apropriado para produção. Nunca troque por `prisma migrate dev` neste passo.
 
-`db:deploy` usa `prisma migrate deploy`: é o comando não interativo apropriado para produção. Nunca troque por `prisma migrate dev` na Vercel.
+Na Vercel, mantenha o **Build Command** padrão:
+
+```text
+npm run build
+```
 
 ## 5. Validar
 
@@ -62,4 +69,4 @@ Na Vercel, faça **Redeploy** (ou envie um commit vazio) e abra a URL de produç
 1. Localmente, altere `prisma/schema.prisma`.
 2. Crie e teste uma migration com `npx prisma migrate dev --name descricao` usando o Docker local.
 3. Versione a nova pasta em `prisma/migrations` e faça push.
-4. Faça um redeploy na Vercel. O comando de build aplicará as migrations pendentes.
+4. Repita localmente o passo de `db:deploy` com o snippet da base de produção e faça um redeploy na Vercel.
